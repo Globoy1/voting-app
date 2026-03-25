@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY package*.json ./
+
+RUN if [ -f package-lock.json ]; then \
+      npm ci --omit=dev; \
+    else \
+      npm install --omit=dev; \
+    fi
+
+COPY . .
+
+RUN chown -R node:node /app
+USER node
+
+EXPOSE 8888
+
+HEALTHCHECK --interval=10s --timeout=3s --retries=5 CMD \
+  node -e "require('http').get('http://127.0.0.1:8888/', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+
+CMD ["node", "server.js"]
